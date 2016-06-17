@@ -10,21 +10,21 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PrintReader {
 
     public static void main(String[] args) {
         String fileName = "jac1.xml";
-        List<Print> printList = parseXML(fileName);
-        for(Print print : printList){
+        Map printMap = parseXML(fileName);
+        for(Object print : printMap.values()){
             System.out.println(print.toString());
         }
     }
 
-    private static List<Print> parseXML(String fileName) {
-        List<Print> printList = new ArrayList<>();
+    private static Map<String, Print> parseXML(String fileName) {
+        Map<String, Print> printMap = new HashMap<>();
         Print print = null;
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
         try {
@@ -38,18 +38,28 @@ public class PrintReader {
                         Attribute deviceAddressAttr = startElement.getAttributeByName(new QName("deviceAddress"));
                         if (deviceAddressAttr != null)
                             print.setDeviceAddress(deviceAddressAttr.getValue());
-                    } else if (startElement.getName().getLocalPart().equals("UserLogin")) {
-                        xmlEvent = xmlEventReader.nextEvent();
-                        print.setUserLogin(xmlEvent.asCharacters().getData());
                     } else if (startElement.getName().getLocalPart().equals("Amount")) {
                         xmlEvent = xmlEventReader.nextEvent();
-                        print.setAmount(Integer.parseInt(xmlEvent.asCharacters().getData()));
+                        if (!xmlEvent.isEndElement()) {
+                            if (xmlEvent.asCharacters().getData() != null)
+                                print.setAmount(Integer.parseInt(xmlEvent.asCharacters().getData()));
+                        }
                     }
                 }
+                //End of Print element, should be added to hashmap
                 if (xmlEvent.isEndElement()) {
                     EndElement endElement = xmlEvent.asEndElement();
-                    if (endElement.getName().getLocalPart().equals("Print"))
-                        printList.add(print);
+                    if (endElement.getName().getLocalPart().equals("Print")) {
+
+                        if(printMap.get(print.getDeviceAddress()) == null)
+                            printMap.put(print.getDeviceAddress(), print);
+                        else {
+                            Print previous = printMap.get(print.getDeviceAddress());
+                            int printPreviousAmount = previous.getAmount();
+                            print.setAmount(print.getAmount() + printPreviousAmount);
+                            printMap.put(print.getDeviceAddress(), print);
+                        }
+                    }
                 }
             }
 
@@ -57,6 +67,6 @@ public class PrintReader {
             e.printStackTrace();
         }
 
-        return printList;
+        return printMap;
     }
 }
