@@ -16,7 +16,7 @@ import java.util.Map;
 public class PrintReader {
 
     public static void main(String[] args) {
-        String fileName = "jac1.xml";
+        String fileName = args[0];
         Map printMap = parseXML(fileName);
         for(Object print : printMap.values()){
             System.out.println(print.toString());
@@ -63,7 +63,11 @@ public class PrintReader {
                 }
             }
 
-        } catch (FileNotFoundException | XMLStreamException e) {
+        } catch (FileNotFoundException e) {
+            System.out.println("File is not found");
+            e.printStackTrace();
+        } catch (XMLStreamException e) {
+            System.out.println("Something is wrong with xml file (maybe encoding)");
             e.printStackTrace();
         }
 
